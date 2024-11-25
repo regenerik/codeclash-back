@@ -11,8 +11,6 @@ load_dotenv()
 import pandas as pd
 import requests
 from io import BytesIO
-from federal_data import datos_electorales_fed
-from local_data import datos_electorales_loc
 
 
 
@@ -62,9 +60,9 @@ def procesar_registro():
 
         # Verificar ámbito y seleccionar datos
         if ambito == "federal":
-            datos_electorales = datos_electorales_fed
+            datos_electorales = 1
         elif ambito == "local":
-            datos_electorales = datos_electorales_loc
+            datos_electorales = 1
         else:
             return jsonify({"error": "Ámbito inválido"}), 400
 
