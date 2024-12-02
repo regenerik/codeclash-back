@@ -21,20 +21,20 @@ jwt = JWTManager()
 
 # Sistema de key base pre rutas ------------------------:
 
-API_KEY = os.getenv('API_KEY')
+# API_KEY = os.getenv('API_KEY')
 
-def check_api_key(api_key):
-    return api_key == API_KEY
+# def check_api_key(api_key):
+#     return api_key == API_KEY
 
-@maps_bp.before_request
-def authorize():
-    if request.method == 'OPTIONS':
-        return
-    if request.path in ['/get_map_url','/test_maps_bp','/','/correccion_campos_vacios','/descargar_positividad_corregida','/download_comments_evaluation','/all_comments_evaluation','/download_resume_csv','/create_resumes_of_all','/descargar_excel','/create_resumes', '/reportes_disponibles', '/create_user', '/login', '/users','/update_profile','/update_profile_image','/update_admin']:
-        return
-    api_key = request.headers.get('Authorization')
-    if not api_key or not check_api_key(api_key):
-        return jsonify({'message': 'Unauthorized'}), 401
+# @maps_bp.before_request
+# def authorize():
+#     if request.method == 'OPTIONS':
+#         return
+#     if request.path in ['/get_map_url','/test_maps_bp','/','/correccion_campos_vacios','/descargar_positividad_corregida','/download_comments_evaluation','/all_comments_evaluation','/download_resume_csv','/create_resumes_of_all','/descargar_excel','/create_resumes', '/reportes_disponibles', '/create_user', '/login', '/users','/update_profile','/update_profile_image','/update_admin']:
+#         return
+#     api_key = request.headers.get('Authorization')
+#     if not api_key or not check_api_key(api_key):
+#         return jsonify({'message': 'Unauthorized'}), 401
     
 #--------------------------------RUTAS SINGLE---------------------------------
 
@@ -45,6 +45,7 @@ def test():
 
 
 @maps_bp.route('/get_map_url', methods=['POST'])
+@jwt_required()
 def get_map_url():
     try:
         logger.info("entro en la ruta get_map_url")
