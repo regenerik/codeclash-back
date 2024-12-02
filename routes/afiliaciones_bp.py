@@ -18,20 +18,20 @@ jwt = JWTManager()
 
 # Sistema de key base pre rutas ------------------------:
 
-API_KEY = os.getenv('API_KEY')
+# API_KEY = os.getenv('API_KEY')
 
-def check_api_key(api_key):
-    return api_key == API_KEY
+# def check_api_key(api_key):
+#     return api_key == API_KEY
 
-@afiliaciones_bp.before_request
-def authorize():
-    if request.method == 'OPTIONS':
-        return
-    if request.path in ['/test_afiliaciones','/consulta-afiliado',]:
-        return
-    api_key = request.headers.get('Authorization')
-    if not api_key or not check_api_key(api_key):
-        return jsonify({'message': 'Unauthorized'}), 401
+# @afiliaciones_bp.before_request
+# def authorize():
+#     if request.method == 'OPTIONS':
+#         return
+#     if request.path in ['/test_afiliaciones','/consulta-afiliado',]:
+#         return
+#     api_key = request.headers.get('Authorization')
+#     if not api_key or not check_api_key(api_key):
+#         return jsonify({'message': 'Unauthorized'}), 401
     
 # RUTA TEST:
 
@@ -51,6 +51,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @afiliaciones_bp.route("/consulta-afiliado", methods=["POST"])
+@jwt_required()
 def consultar_afiliacion():
     try:
         data = request.json
