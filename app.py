@@ -137,7 +137,12 @@ with app.app_context():
 if __name__ == '__main__':
     app.run()
 
-# EJECUTO CON : (solo si es la primera vez en tu pc crea el entorno virtual): python -m venv myenv
-#               Lo siguiente siempre para activar el entorno:
-#               myenv\Scripts\activate       
-#               waitress-serve --port=5000 app:app
+# EJECUTO CON : Si es la primera vez en tu pc crea el entorno virtual e instala dependencias:
+
+#                 python -m venv myenv
+#                 pip install -r requirements.txt
+
+#               Lo siguiente siempre para activar el entorno e iniciar el servidor:
+
+#                 myenv\Scripts\activate       
+#                 waitress-serve --port=5000 app:app
