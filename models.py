@@ -11,11 +11,6 @@ class User(db.Model):
     url_image = db.Column(db.String(255))
     admin = db.Column(db.Boolean)
 
-class Permitido(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    dni = db.Column(db.Integer, db.ForeignKey('user.id'))
-
-
 class Reporte(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -33,42 +28,6 @@ class TodosLosReportes(db.Model):
     size_megabytes = db.Column(db.Float, nullable=True)  # El tamaño del reporte en megabytes, puede ser NULL si no está disponible
     created_at = db.Column(db.DateTime, nullable=True)  # La fecha de creación, puede ser NULL si no está disponible
 
-class Survey(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    data = db.Column(db.LargeBinary, nullable=False)
-
-class TotalComents(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    data = db.Column(db.LargeBinary, nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-class AllApiesResumes(db.Model):
-    __tablename__ = 'archivo_resumido'
-    id = db.Column(db.Integer, primary_key=True)
-    archivo_binario = db.Column(db.LargeBinary)
-
 class AllCommentsWithEvaluation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     archivo_binario = db.Column(db.LargeBinary)
-
-
-class FilteredExperienceComments(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    archivo_binario = db.Column(db.LargeBinary)
-
-
-class DailyCommentsWithEvaluation(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    archivo_binario = db.Column(db.LargeBinary)
-
-
-# ------------------------NUEVOS MODELOS E3 DIGITAL----------------------
-
-class EstadisticaFederal2024(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    archivo = db.Column(db.LargeBinary)
-
-    
-class EstadisticaLocal2024(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    archivo = db.Column(db.LargeBinary)

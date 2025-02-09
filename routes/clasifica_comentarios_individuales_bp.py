@@ -1,7 +1,7 @@
 from flask import Blueprint, send_file, make_response, request, jsonify, render_template, current_app, Response # Blueprint para modularizar y relacionar con app
 from flask_bcrypt import Bcrypt                                  # Bcrypt para encriptación
 from flask_jwt_extended import JWTManager                        # Jwt para tokens
-from models import AllCommentsWithEvaluation,FilteredExperienceComments   # importar tabla "User" de models
+from models import AllCommentsWithEvaluation                     # importar tabla "User" de models
 from database import db                                          # importa la db desde database.py
 from datetime import timedelta, datetime                         # importa tiempo especifico para rendimiento de token válido
 from utils.clasifica_utils import  get_evaluations_of_all

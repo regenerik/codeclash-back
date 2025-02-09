@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify # Para endpoints
 from flask_sqlalchemy import SQLAlchemy  # Para rutas
 from flask_jwt_extended import  JWTManager
 from routes.admin_bp import admin_bp                       # Acá importamos rutas admin
-from public_bp import public_bp                     # Acá importamos rutas public
+from routes.public_bp import public_bp                     # Acá importamos rutas public
 from routes.clasifica_comentarios_individuales_bp import clasifica_comentarios_individuales_bp
 from database import db                             # Acá importamos la base de datos inicializada
 from flask_cors import CORS                         # Permisos de consumo
