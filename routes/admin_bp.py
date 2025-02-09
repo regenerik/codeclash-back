@@ -1,19 +1,26 @@
 from flask import Blueprint, send_file, make_response, request, jsonify, render_template, current_app, Response # Blueprint para modularizar y relacionar con app
 from flask_bcrypt import Bcrypt                                  # Bcrypt para encriptación
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity   # Jwt para tokens
-from models import User, TotalComents                            # importar tabla "User" de models
+from models import User                                          # importar tabla "User" de models
 from database import db                                          # importa la db desde database.py
 from datetime import timedelta                                   # importa tiempo especifico para rendimiento de token válido
-from logging_config import logger
+from logging_config import logger                                # logger.info("console log que se ve en render")
 import os                                                        # Para datos .env
 from dotenv import load_dotenv                                   # Para datos .env
-load_dotenv()
-import pandas as pd
-from io import BytesIO
+load_dotenv()                                                    # Para datos .env
+import pandas as pd                                              # Para modificar tablas
+from io import BytesIO                                           # Transformar archivos base 64
+#imports para investigar contido de un html específico:
+import requests
+from bs4 import BeautifulSoup
+#------------------------------------------------------
 
 
 
 admin_bp = Blueprint('admin', __name__)     # instanciar admin_bp desde clase Blueprint para crear las rutas.
+
+# Inicializamos herramientas de encriptado y access token ------------------------:
+
 bcrypt = Bcrypt()
 jwt = JWTManager()
 
@@ -28,6 +35,7 @@ def check_api_key(api_key):
 def authorize():
     if request.method == 'OPTIONS':
         return
+    # En la lista de este if agregamos las rutas que no querramos restringir si no tienen el API_KEY embutido en Authorization en HEADERS.
     if request.path in ['/test_admin_bp','/','/correccion_campos_vacios','/descargar_positividad_corregida','/download_comments_evaluation','/all_comments_evaluation','/download_resume_csv','/create_resumes_of_all','/descargar_excel','/create_resumes', '/reportes_disponibles', '/create_user', '/login', '/users','/update_profile','/update_profile_image','/update_admin']:
         return
     api_key = request.headers.get('Authorization')
@@ -36,7 +44,9 @@ def authorize():
     
 #--------------------------------RUTAS SINGLE---------------------------------
 
-# Ruta de prueba time-out-test------------------------------------------------
+
+
+# Ruta TEST------------------------------------------------
 @admin_bp.route('/test_admin_bp', methods=['GET'])
 def test():
     return jsonify({'message': 'test bien sucedido','status':"Si lees esto, tenemos que ver como manejar el timeout porque los archivos llegan..."}),200
@@ -247,94 +257,3 @@ def get_user(dni):
     except Exception as e:
         return {"Error":"El dni proporcionado no corresponde a ninguno registrado: " + str(e)}, 500
     
-
-
-# ADMINISTRACION DE RESUMEN BBDDconcat ( CRUDO ) DE COMENTARIOS DE APIES-----------------------------------/////////////////////////////////////////////////////////
-
-@admin_bp.route('/eliminar_excel_total', methods=['DELETE'])
-def eliminar_excel():
-    try:
-        excel_data = TotalComents.query.first()
-        if excel_data:
-            db.session.delete(excel_data)
-            db.session.commit()
-            return jsonify({"message": "Excel eliminado con éxito"}), 200
-        else:
-            return jsonify({"message": "No hay archivo Excel para eliminar"}), 404
-    except Exception as e:
-        return jsonify({"message": "Error al eliminar el archivo"}), 500
-    
-
-@admin_bp.route('/subir_excel_total', methods=['POST'])
-def subir_excel():
-    try:
-        # Eliminar el registro anterior
-        excel_data = TotalComents.query.first()
-        if excel_data:
-            db.session.delete(excel_data)
-            db.session.commit()
-
-        # Guardar el nuevo Excel en binario
-        file = request.files['file']
-        df = pd.read_excel(file)  # Cargamos el Excel usando pandas
-        binary_data = BytesIO()
-        df.to_pickle(binary_data)  # Convertimos el DataFrame a binario
-        binary_data.seek(0)
-
-        nuevo_excel = TotalComents(data=binary_data.read())
-        db.session.add(nuevo_excel)
-        db.session.commit()
-
-        return jsonify({"message": "Archivo subido con éxito"}), 200
-    except Exception as e:
-        return jsonify({"message": f"Error al subir el archivo: {str(e)}"}), 500
-    
-@admin_bp.route('/descargar_excel', methods=['GET'])
-def descargar_excel():
-    try:
-        logger.info("1 - Entró en la ruta descargar_excel")
-        # Obtener el registro más reciente de la base de datos
-        excel_data = TotalComents.query.first()
-
-        if not excel_data:
-            return jsonify({"message": "No se encontró ningún archivo Excel en la base de datos"}), 404
-
-        logger.info("2 - Encontró el excel en db, traduciendo de binario a dataframe..")
-        # Convertir los datos binarios de vuelta a DataFrame
-        binary_data = BytesIO(excel_data.data)
-        df = pd.read_pickle(binary_data)
-
-        logger.info("3 - De dataframe a excel...")
-        # Convertir el DataFrame a un archivo Excel en memoria
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-            df.to_excel(writer, index=False, sheet_name='APIES_Data')
-
-        output.seek(0)  # Mover el puntero al inicio del archivo
-        
-        logger.info("4 - Devolviendo excel. Fin del proceso...")
-        # Enviar el archivo Excel como respuesta
-        return send_file(output, 
-                         download_name='apies_data.xlsx', 
-                         as_attachment=True, 
-                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-
-    except Exception as e:
-        return jsonify({"message": f"Error al descargar el archivo: {str(e)}"}), 500
-    
-
-@admin_bp.route('/existencia_excel', methods=['GET'])
-def existencia_excel():
-    try:
-        # Obtener el registro más reciente de la base de datos!
-        excel_data = TotalComents.query.first()
-
-        if not excel_data:
-            return jsonify({"message": "No se encontró ningún archivo Excel en la base de datos", "ok": False}), 404
-        else:
-            # Formatear el timestamp de manera legible (dd/mm/yyyy HH:MM:SS)
-            datetime = excel_data.timestamp.strftime('%d/%m/%Y %H:%M:%S')
-            return jsonify({"message": f"El archivo se encuentra disponible. Y data del día: {datetime}", "ok": True, "datetime":datetime}), 200
-        
-    except Exception as e:
-        return jsonify({"message": f"Error al confirmar la existencia del archivo: {str(e)}", "ok": False}), 500

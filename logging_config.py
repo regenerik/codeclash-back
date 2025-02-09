@@ -1,3 +1,6 @@
+# ESTE SISTEMA NOS PROVEE "logger" para todas las rutas e utils. El mismo permite ver los logs en render.com
+# console.log no se muestra online.
+
 import logging
 import sys
 

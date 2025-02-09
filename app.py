@@ -2,21 +2,14 @@ import os # para saber la ruta absoluta de la db si no la encontramos
 from flask_bcrypt import Bcrypt  # para encriptar y comparar
 from flask import Flask, request, jsonify # Para endpoints
 from flask_sqlalchemy import SQLAlchemy  # Para rutas
-from flask_jwt_extended import  JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import  JWTManager
 from routes.admin_bp import admin_bp                       # Acá importamos rutas admin
 from public_bp import public_bp                     # Acá importamos rutas public
-from routes.afiliaciones_bp import afiliaciones_bp
-from routes.estadisticas_bp import estadisticas_bp
-from routes.maps_bp import maps_bp
-from routes.rescate_reportes_bp import rescate_reportes_bp
-from routes.encuestas_cursos_bp import encuestas_cursos_bp
-from routes.resumen_comentarios_apies_bp import resumen_comentarios_apies_bp
-from routes.diarios_clasifica_sentimientos_bp import diarios_clasifica_sentimientos_bp
 from routes.clasifica_comentarios_individuales_bp import clasifica_comentarios_individuales_bp
 from database import db                             # Acá importamos la base de datos inicializada
 from flask_cors import CORS                         # Permisos de consumo
 from extensions import init_extensions              # Necesario para que funcione el executor en varios archivos en simultaneo
-from models import TodosLosReportes, User  # Importamos el modelo para TodosLosReportes
+from models import User                             # Importamos el modelo para TodosLosReportes
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -42,21 +35,9 @@ app.register_blueprint(admin_bp)  # poder registrarlo como un blueprint ( parte 
 
 app.register_blueprint(public_bp, url_prefix='/public')  # blueprint public_bp
 
-app.register_blueprint(rescate_reportes_bp, url_prefix='/') 
 
-app.register_blueprint(encuestas_cursos_bp, url_prefix='/') 
+app.register_blueprint(clasifica_comentarios_individuales_bp, url_prefix='/') # contiene ejemplos de executor y openai
 
-app.register_blueprint(resumen_comentarios_apies_bp, url_prefix='/') 
-
-app.register_blueprint(clasifica_comentarios_individuales_bp, url_prefix='/')
-
-app.register_blueprint(diarios_clasifica_sentimientos_bp, url_prefix='/')
-
-app.register_blueprint(maps_bp, url_prefix='/')
-
-app.register_blueprint(estadisticas_bp, url_prefix='/')
-
-app.register_blueprint(afiliaciones_bp, url_prefix='/')
 
 # DATABASE---------------
 db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance', 'mydatabase.db')
@@ -69,27 +50,9 @@ print(f"Ruta de la base de datos: {db_path}")
 if not os.path.exists(os.path.dirname(db_path)): # Nos aseguramos que se cree carpeta instance automatico para poder tener mydatabase.db dentro.
     os.makedirs(os.path.dirname(db_path))
 
-# Función para cargar los reportes iniciales
-def cargar_todos_los_reportes_iniciales():
-    if TodosLosReportes.query.count() == 0:  # Verificamos si la tabla está vacía
-        reportes_iniciales = [
-            TodosLosReportes(report_url="https://www.campuscomercialypf.com/totara/reportbuilder/report.php?id=133", title="USUARIOS POR ASIGNACION PARA GESTORES"),
-            TodosLosReportes(report_url="https://www.campuscomercialypf.com/totara/reportbuilder/report.php?id=137&sid=501", title="CURSADA RETAIL"),
-            TodosLosReportes(report_url="https://www.campuscomercialypf.com/totara/reportbuilder/report.php?id=248", title="Cursos con detalle"),
-            TodosLosReportes(report_url="https://www.campuscomercialypf.com/totara/reportbuilder/report.php?id=130", title="VERIFICA USUARIOS PARA GESTORES"),
-            TodosLosReportes(report_url="https://www.campuscomercialypf.com/totara/reportbuilder/report.php?id=286&sid=513", title="AVANCE DE PROGRAMAS PBI"),
-            TodosLosReportes(report_url="https://www.campuscomercialypf.com/totara/reportbuilder/report.php?id=286&sid=512", title="AVANCE DE PROGRAMAS PBI"),
-            TodosLosReportes(report_url="https://www.campuscomercialypf.com/totara/reportbuilder/report.php?id=204", title="T2_CURSOS_HV"),
-            TodosLosReportes(report_url="https://www.campuscomercialypf.com/totara/reportbuilder/report.php?id=205", title="T2_APIES_HV"),
-            TodosLosReportes(report_url="https://www.campuscomercialypf.com/totara/reportbuilder/report.php?id=261", title="T2_FACILITADOR_SEMINAR"),
-            TodosLosReportes(report_url="https://www.campuscomercialypf.com/totara/reportbuilder/report.php?id=296&sid=649", title="CURSADA NO RETAIL")
-            # Agrega más reportes iniciales aquí
-        ]
-        db.session.bulk_save_objects(reportes_iniciales)
-        db.session.commit()
-        print("Base de datos inicializada con todos los reportes.")
 
-# Función para cargar los usuarios iniciales
+
+# Función para cargar los usuarios iniciales ( si necesitase )
 def cargar_usuarios_iniciales():
     if User.query.count() == 0:  # Verificamos si la tabla User está vacía
         usuarios_iniciales = [
@@ -129,7 +92,6 @@ def cargar_usuarios_iniciales():
 with app.app_context():
     db.init_app(app)
     db.create_all() # Nos aseguramos que este corriendo en el contexto del proyecto.
-    cargar_todos_los_reportes_iniciales()  # Cargamos los reportes iniciales
     cargar_usuarios_iniciales()
 # -----------------------
 

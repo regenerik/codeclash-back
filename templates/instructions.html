@@ -1,230 +1,83 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
-    <title>Instrucciones de Uso de la API Repomatic - Sección /admin - v1.1.2</title>
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API by QuanThink</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 40px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
             color: #333;
         }
-
-        h1, h2, h3 {
-            color: #2e6da4;
-        }
-
-        p, ol {
-            margin-bottom: 10px;
-        }
-
-        code {
-            font-family: Consolas, monospace;
-            background-color: #f0f0f0;
-            padding: 2px 5px;
-            border-radius: 3px;
-        }
-
-        pre {
-            background-color: #f0f0f0;
+        .route {
+            background: white;
             padding: 10px;
-            border-radius: 3px;
-            overflow-x: auto;
-        }
-
-        .note, .warning, .example {
-            border-radius: 3px;
             margin-bottom: 10px;
-        }
-
-        .note {
-            background-color: #dff0d8;
-            border: 1px solid #d0e9c6;
-        }
-
-        .warning {
-            background-color: #f2dede;
-            border: 1px solid #ebccd1;
-        }
-
-        .example {
-            background-color: #d9edf7;
-            border: 1px solid #bce8f1;
+            border-left: 5px solid #007bff;
         }
     </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1 class="my-4">Instrucciones de Uso de la API Repomatic</h1>
-
-        <p>La API Repomatic está diseñada para proporcionar de manera práctica los reportes necesarios desde <a href="https://www.campuscomercialypf.com/" target="_blank">Campus Comercial YPF</a>. Es importante destacar que el servicio de esta API no retiene en ningún momento información sensible relacionada con la web mencionada.</p>
-
-        <div class="alert alert-info note">
-            <p>Para consumir cualquiera de los recursos de esta API, es necesario contar con una <strong>API.KEY</strong> que puede ser facilitada por un administrador. La misma se incluye en los headers como "Authorization"</p>
-        </div>
-
-        <h2>Rutas Disponibles:</h2>
-
-        <h3>1 - Documentación</h3>
-        <p><strong>(GET)</strong> <a href="https://repomatic.onrender.com/" target="_blank">https://repomatic.onrender.com/</a></p>
-        <p>Esta ruta te llevará a esta documentación.</p>
-
-        <h3>2 - Obtener Lista de Reportes Disponibles</h3>
-        <p><strong>(GET)</strong> <a href="https://repomatic.onrender.com/reportes_disponibles" target="_blank">https://repomatic.onrender.com/reportes_disponibles</a></p>
-        <p>Esta ruta proporciona la lista de reportes actualmente guardados en la base de datos. Ejemplo de respuesta:</p>
-        <pre>
-{
-    "lista_reportes": [
-        {
-            "created_at": "30/07/2024 15:10:33",
-            "elapsed_time": "0:00:08.804579",
-            "id": 1,
-            "report_url": "url_de_reporte_disponible_del_campus",
-            "size_megabytes": 10.562853813171387,
-            "user_id": 12345678
-        }
-    ],
-    "total": 1,
-    "result": "ok"
-}
-        </pre>
-        <p>Status Code: 200</p>
-
-        <h3>3 - Recuperar Reporte de Campus a Servidor</h3>
-        <p><strong>(POST)</strong> <a href="https://repomatic.onrender.com/recuperar_reporte" target="_blank">https://repomatic.onrender.com/recuperar_reporte</a></p>
-        <p>Body (raw JSON):</p>
-        <pre>
-{
-    "username": "123456789", // Correspondiente al login en Campus
-    "password": "**********", // Correspondiente al login en Campus
-    "url": "https://url.de.reporte.en.cuestion"
-}
-        </pre>
-        <p>Respuesta:</p>
-        <pre>
-{
-    "message": "El proceso de recuperación del reporte ha comenzado"
-}
-        </pre>
-        <p>Status Code: 200</p>
-
-        <h3>4 - Descargar Reporte con URL</h3>
-        <p><strong>(POST)</strong> <a href="https://repomatic.onrender.com/obtener_reporte" target="_blank">https://repomatic.onrender.com/obtener_reporte</a></p>
-        <p>Body (raw JSON):</p>
-        <pre>
-{
-    "reporte_url": "url_de_reporte_que_quiero_descargar",
-    "file_type": "csv" // Puedes descargarlo en "json", "html", "xlsx", "csv". Si no se incluye, la descarga será por defecto en "csv".
-}
-        </pre>
-        <p>La respuesta es el archivo elegido, conteniendo en su nombre el título del reporte, la fecha y la hora de creación del mismo en la base de datos (el tiempo no indica el momento de la descarga). Ejemplo de nombre de archivo:</p>
-        <pre>
-USUARIOS_POR_ASIGNACION_PARA_GESTORES_30-07-2024_15-03.csv
-        </pre>
-        <p>Además, en los headers de la respuesta, en <code>Content-Disposition</code>, también puedes acceder al nombre del archivo. Status Code: 200</p>
-
-        <h3>5 - Mostrar Usuarios</h3>
-        <p><strong>(GET)</strong> <a href="https://repomatic.onrender.com/users" target="_blank">https://repomatic.onrender.com/users</a></p>
-        <p>Esta ruta devuelve la lista de todos los usuarios registrados en la base de datos. Ejemplo de respuesta:</p>
-        <pre>
-{
-    "lista_usuarios": [
-        {
-            "dni": "12345678",
-            "email": "usuario@ejemplo.com",
-            "name": "Nombre Usuario",
-            "admin": true,
-            "url_image": "http://url.de.imagen"
-        }
-    ],
-    "cantidad": 1
-}
-        </pre>
-        <p>Status Code: 200</p>
-
-        <h3>6 - Actualizar Perfil de Usuario</h3>
-        <p><strong>(PUT)</strong> <a href="https://repomatic.onrender.com/update_profile" target="_blank">https://repomatic.onrender.com/update_profile</a></p>
-        <p>Body (raw JSON):</p>
-        <pre>
-{
-    "email": "usuario@ejemplo.com",
-    "password": "nueva_contraseña",
-    "name": "Nuevo Nombre",
-    "dni": "12345678"
-}
-        </pre>
-        <p>Respuesta:</p>
-        <pre>
-{
-    "message": "Usuario actualizado con éxito"
-}
-        </pre>
-        <p>Status Code: 200</p>
-
-        <h3>7 - Actualizar Imagen de Perfil</h3>
-        <p><strong>(PUT)</strong> <a href="https://repomatic.onrender.com/update_profile_image" target="_blank">https://repomatic.onrender.com/update_profile_image</a></p>
-        <p>Body (raw JSON):</p>
-        <pre>
-{
-    "email": "usuario@ejemplo.com",
-    "url_image": "http://nueva.url.de.imagen"
-}
-        </pre>
-        <p>Respuesta:</p>
-        <pre>
-{
-    "message": "Imagen de perfil actualizada con éxito"
-}
-        </pre>
-        <p>Status Code: 200</p>
-
-        <h3>8 - Actualizar Estado Admin</h3>
-        <p><strong>(PUT)</strong> <a href="https://repomatic.onrender.com/update_admin" target="_blank">https://repomatic.onrender.com/update_admin</a></p>
-        <p>Body (raw JSON):</p>
-        <pre>
-{
-    "email": "usuario@ejemplo.com",
-    "admin": true
-}
-        </pre>
-        <p>Respuesta:</p>
-        <pre>
-{
-    "message": "Estado admin actualizado con éxito"
-}
-        </pre>
-        <p>Status Code: 200</p>
-
-        <h3>9 - Obtener Información de Usuario</h3>
-        <p><strong>(GET)</strong> <a href="https://repomatic.onrender.com/get_user/12345678" target="_blank">https://repomatic.onrender.com/get_user/12345678</a></p>
-        <p>Para consumir este recurso, es necesario contar con una <strong>API.KEY</strong> que puede ser facilitada por un administrador. La misma se incluye en los headers como "Authorization".</p>
-        <p>Esta ruta devuelve la información del usuario asociado al DNI proporcionado. Ejemplo de respuesta:</p>
-        <pre>
-{
-    "name": "Nombre Usuario",
-    "admin": true,
-    "dni": "12345678",
-    "email": "usuario@ejemplo.com",
-    "url_image": "http://url.de.imagen"
-}
-        </pre>
-        <p>Status Code: 200</p>
-
-        <div class="alert alert-warning warning">
-            <p>Esta documentación puede variar ya que el producto está en etapa de desarrollo. Te pedimos disculpas por cualquier inconsistencia o demora.</p>
-        </div>
-
-        <p>Creado por David Ezequiel Cunha Quinteros - 2024 - Repomatic para Campus YPF</p>
+    <h1>📌 API - Administración by QuanThink</h1>
+    <p>Esta es una plantilla de API que debe ser modificada según las necesidades del proyecto. Abajo se listan las rutas funcionales. Es posible que algunas rutas necesiten Authorization en Headers al llamarse. Para obtener la Key, contacte con un administrador.</p>
+    
+    <div class="route">
+        <h3>📌 Ruta de Prueba</h3>
+        <p><strong>GET</strong> <code>/test_admin_bp</code></p>
+        <p>Respuesta de prueba para verificar que la API está funcionando.</p>
     </div>
-
-    <!-- Bootstrap JS, Popper.js, and jQuery -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <div class="route">
+        <h3>📌 Documentación</h3>
+        <p><strong>GET</strong> <code>/</code></p>
+        <p>Devuelve la documentación de la API. Exactamente donde estas parado ahora.</p>
+    </div>
+    
+    <div class="route">
+        <h3>📌 Crear Usuario</h3>
+        <p><strong>POST</strong> <code>/create_user</code></p>
+        <p>Crea un nuevo usuario en el sistema.</p>
+    </div>
+    
+    <div class="route">
+        <h3>📌 Iniciar Sesión</h3>
+        <p><strong>POST</strong> <code>/login</code></p>
+        <p>Genera un token de acceso para autenticación.</p>
+    </div>
+    
+    <div class="route">
+        <h3>📌 Obtener Usuarios</h3>
+        <p><strong>GET</strong> <code>/users</code> (Requiere Token)</p>
+        <p>Lista todos los usuarios registrados.</p>
+    </div>
+    
+    <div class="route">
+        <h3>📌 Actualizar Perfil</h3>
+        <p><strong>PUT</strong> <code>/update_profile</code></p>
+        <p>Modifica los datos de un usuario registrado.</p>
+    </div>
+    
+    <div class="route">
+        <h3>📌 Actualizar Imagen de Perfil</h3>
+        <p><strong>PUT</strong> <code>/update_profile_image</code></p>
+        <p>Cambia la imagen de perfil del usuario.</p>
+    </div>
+    
+    <div class="route">
+        <h3>📌 Cambiar Rol de Administrador</h3>
+        <p><strong>PUT</strong> <code>/update_admin</code></p>
+        <p>Asigna o revoca permisos de administrador a un usuario.</p>
+    </div>
+    
+    <div class="route">
+        <h3>📌 Obtener Usuario por número de identidad</h3>
+        <p><strong>GET</strong> <code>/get_user/&lt;dni&gt;</code></p>
+        <p>Busca y devuelve los datos de un usuario por su número de identidad.</p>
+    </div>
 </body>
-
 </html>
