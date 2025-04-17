@@ -97,21 +97,25 @@ def init_socketio(socketio):
         user_id = request.sid
         room_id = data.get('room_id')
 
+        # 1) Borro de la BD
         part = Participant.query.filter_by(room_id=room_id, user_id=user_id).first()
         if part:
             db.session.delete(part)
             db.session.commit()
 
-        # 1) salgo del canal
-        leave_room(room_id)
-
-        # 2) aviso a los que quedan dentro
+        # 2) Recalculo la lista PARA quien queda
         participants = [p.username for p in Room.query.get(room_id).participants]
-        emit('update_participants', {
+        print(f"[server] leave_room {room_id} pedido por {user_id}, quedan: {participants}")
+
+        # 3) Emito actualización ANTES de sacar al socket del canal
+        socketio.emit('update_participants', {
             'participants': participants
         }, room=room_id)
 
-        # 3) refresco el lobby
+        # 4) Ahora sí saco el socket
+        leave_room(room_id)
+
+        # 5) Refresco el lobby global
         _broadcast_all(socketio)
 
     @socketio.on('delete_room')
@@ -120,8 +124,12 @@ def init_socketio(socketio):
         print(f"[server] delete_room {room_id}")
         room = Room.query.get(room_id)
         if room:
+            # notifico a todos los que estén EN ESA SALA que la borraron
+            emit('room_deleted', {'room_id': room_id}, room=room_id)
+            # borro de la DB
             db.session.delete(room)
             db.session.commit()
+        # refresco el lobby en todos
         _broadcast_all(socketio)
 
 
@@ -148,6 +156,7 @@ def _broadcast_to(sid, socketio):
         'name': r.name,
         'difficulty': r.difficulty,
         'hasPassword': bool(r.password),
-        'count': Participant.query.filter_by(room_id=r.id).count()
+        'count': Participant.query.filter_by(room_id=r.id).count(),
+        'participants': [ p.username for p in r.participants ]
     } for r in rooms]
     socketio.emit('rooms_list', {'rooms': payload}, room=sid)
