@@ -51,4 +51,5 @@ class Participant(db.Model):
     user_id   = db.Column(db.Integer, db.ForeignKey('users.id'))
     ready     = db.Column(db.Boolean, default=False)
     retired   = db.Column(db.Boolean, default=False)
+    username  = db.Column(db.String, nullable=False)
     room      = db.relationship('Room', back_populates='participants')
