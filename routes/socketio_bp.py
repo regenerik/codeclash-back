@@ -3,6 +3,7 @@ from flask import request
 from flask_socketio import emit, join_room, leave_room
 from database import db
 from models import Room, Participant
+from threading import Timer
 
 room_states = {}
 
@@ -90,26 +91,53 @@ def init_socketio(socketio):
         rid = str(data.get('room_id'))
         uid = request.sid
         ready = data.get('ready')
-        state = room_states.setdefault(rid, {'timer': None, 'ready': {}, 'countdown': False})
+
+        # Estado de la sala con soporte para cancelar el timer
+        state = room_states.setdefault(rid, {
+            'timer': None,
+            'ready': {},
+            'countdown': False,
+            'countdown_timer': None
+        })
+
+        # Guardar estado de ready
         state['ready'][uid] = ready
 
-        # Sacamos el username del participante
+        # Sacar el username
         p = Participant.query.filter_by(room_id=rid, user_id=uid).first()
         uname = p.username if p else 'Anon'
 
-        # Avisamos cambio de ready de uno
+        # Avisar al room del cambio de ready
         emit('ready_updated', {'username': uname, 'ready': ready}, room=rid)
 
-        # Si ya empezó el countdown y uno se desmarca, lo cancelamos
+        # Si ya había un countdown y alguien se desmarca, lo cancelamos
         if state['countdown'] and not ready:
             state['countdown'] = False
+            t = state.get('countdown_timer')
+            if t:
+                t.cancel()
+                state['countdown_timer'] = None
             emit('cancel_countdown', {}, room=rid)
 
-        # Chequeo: si hay 2 jugadores y ambos listos, empezamos countdown
+        # Chequear si hay dos jugadores y ambos listos
         parts = Participant.query.filter_by(room_id=rid).all()
         if len(parts) == 2 and all(state['ready'].get(p.user_id) for p in parts):
+            # Arrancamos el conteo
             state['countdown'] = True
             emit('start_countdown', {'seconds': 5}, room=rid)
+
+            # Programamos el inicio real en 5 segundos
+            def do_start():
+                st = room_states.get(rid)
+                # Si nadie canceló
+                if st and st.get('countdown'):
+                    emit('game_started', {}, room=rid)
+                    st['countdown'] = False
+                    st['countdown_timer'] = None
+
+            t = Timer(5, do_start)
+            state['countdown_timer'] = t
+            t.start()
 
     @socketio.on('join_room')
     def handle_join_room(data):
@@ -184,6 +212,30 @@ def init_socketio(socketio):
             room=room
         )
         print(f"✅ [chat] mandé new_message a sala {room}")
+
+    @socketio.on('update_code')
+    def handle_update_code(data):
+        rid  = str(data.get('room_id'))
+        user = data.get('username')
+        code = data.get('code')
+        # Emití a todos (incluido quien mandó) – podés ajustar include_self si querés
+        emit('code_updated', {'username': user, 'code': code}, room=rid)
+
+    @socketio.on('submit_solution')
+    def handle_submit_solution(data):
+        rid   = str(data.get('room_id'))
+        user  = data.get('username')
+        code  = data.get('code')
+        # Guardamos en memoria (o DB) la solución
+        state = room_states.setdefault(rid, {})
+        sols  = state.setdefault('solutions', {})
+        sols[user] = code
+
+        # Si ambos participantes ya entregaron, avisamos
+        participants = Participant.query.filter_by(room_id=rid).all()
+        if len(participants) == 2 and all(p.username in sols for p in participants):
+            # Mandamos todas las soluciones a la sala
+            emit('both_finished', {'solutions': sols}, room=rid)
 
 def _broadcast_all(socketio):
     rooms = Room.query.filter_by(status='open').all()
