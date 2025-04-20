@@ -83,6 +83,7 @@ def init_socketio(socketio):
         emit('server_message', {'msg': f"Usuario {username} se unió a la sala."}, room=str(room_id))
 
         _broadcast_all(socketio)
+        return {'success': True}
 
     @socketio.on('leave_room')
     def handle_leave_room(data):
@@ -112,6 +113,22 @@ def init_socketio(socketio):
             db.session.delete(room)
             db.session.commit()
             _broadcast_all(socketio)
+
+    @socketio.on('send_message')
+    def handle_send_message(data):
+        # Debug: imprimí en la consola del server
+        room = str(data.get('room_id'))
+        user = data.get('username')
+        msg  = data.get('message')
+        print(f"📝 [chat] recibí de {user} en sala {room}: «{msg}»")
+
+        # Usá emit (importado) en lugar de socketio.emit, así toma la misma sala/namesp.
+        emit(
+            'new_message',
+            {'username': user, 'message': msg},
+            room=room
+        )
+        print(f"✅ [chat] mandé new_message a sala {room}")
 
 def _broadcast_all(socketio):
     rooms = Room.query.filter_by(status='open').all()
