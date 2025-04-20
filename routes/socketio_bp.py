@@ -126,18 +126,15 @@ def init_socketio(socketio):
             state['countdown'] = True
             emit('start_countdown', {'seconds': 5}, room=rid)
 
-            # Programamos el inicio real en 5 segundos
-            def do_start():
+            def start_game_after_delay():
+                socketio.sleep(5)
                 st = room_states.get(rid)
-                # Si nadie canceló
-                if st and st.get('countdown'):
-                    emit('game_started', {}, room=rid)
+                if st and st['countdown']:
+                    # mandamos el inicio y el tiempo de batalla en MINUTOS
+                    socketio.emit('game_started', {'battleMinutes': st['timer']}, room=rid)
                     st['countdown'] = False
-                    st['countdown_timer'] = None
 
-            t = Timer(5, do_start)
-            state['countdown_timer'] = t
-            t.start()
+            socketio.start_background_task(start_game_after_delay)
 
     @socketio.on('join_room')
     def handle_join_room(data):
@@ -231,11 +228,29 @@ def init_socketio(socketio):
         sols  = state.setdefault('solutions', {})
         sols[user] = code
 
+        # ① Aviso de que este jugador terminó
+        socketio.emit(
+            'player_finished',
+            {'username': user},
+            room=rid
+        )
+
         # Si ambos participantes ya entregaron, avisamos
         participants = Participant.query.filter_by(room_id=rid).all()
         if len(participants) == 2 and all(p.username in sols for p in participants):
             # Mandamos todas las soluciones a la sala
-            emit('both_finished', {'solutions': sols}, room=rid)
+            # emit('both_finished', {'solutions': sols}, room=rid)
+            from utils.decide_winner import decide_winner
+            winner, justification = decide_winner(sols)
+            emit(
+                'game_result',
+                {
+                    'solutions': sols,
+                    'winner': winner,
+                    'justification': justification
+                },
+                room=rid
+            )
 
 def _broadcast_all(socketio):
     rooms = Room.query.filter_by(status='open').all()
