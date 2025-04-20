@@ -4,6 +4,8 @@ from flask_socketio import emit, join_room, leave_room
 from database import db
 from models import Room, Participant
 
+room_states = {}
+
 def init_socketio(socketio):
     @socketio.on('connect')
     def handle_connect():
@@ -16,15 +18,30 @@ def init_socketio(socketio):
         user_id = request.sid
         parts = Participant.query.filter_by(user_id=user_id).all()
         room_ids = [p.room_id for p in parts]
+
         if parts:
+            # borrás todos los participantes de este user
             for p in parts:
                 db.session.delete(p)
             db.session.commit()
-            for room_id in room_ids:
-                participants = [p.username for p in Room.query.get(room_id).participants]
-                socketio.emit('update_participants', {'participants': participants}, room=room_id)
+
+            # por cada sala de la que salió, avisás a esa sala (string)
+            for rid in room_ids:
+                participants = [
+                    p.username
+                    for p in Room.query.get(rid).participants
+                ]
+                socketio.emit(
+                    'update_participants',
+                    {'participants': participants},
+                    room=str(rid)       # <- ojo, str(rid) en vez de int
+                )
+
+            # y refrescás el lobby general
             _broadcast_all(socketio)
+
         print(f"<<< Cliente desconectado: {user_id}, eliminado de salas: {room_ids}")
+
 
     @socketio.on('list_rooms')
     def handle_list_rooms():
