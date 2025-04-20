@@ -63,6 +63,10 @@ def init_socketio(socketio):
         db.session.commit()
 
         join_room(str(room.id))
+        # Estado inicial: 5 min y nadie listo
+        room_states[str(room.id)] = {'timer': 5, 'ready': {}, 'countdown': False}
+        # Avisamos al host su timer por defecto
+        emit('timer_updated', {'minutes': 5}, room=str(room.id))
 
         emit('room_created', {
             'id': room.id,
@@ -72,6 +76,40 @@ def init_socketio(socketio):
         }, room=user_id)
 
         _broadcast_all(socketio)
+
+    @socketio.on('change_timer')
+    def handle_change_timer(data):
+        rid = str(data.get('room_id'))
+        minutes = data.get('minutes')
+        state = room_states.setdefault(rid, {'timer': minutes, 'ready': {}, 'countdown': False})
+        state['timer'] = minutes
+        emit('timer_updated', {'minutes': minutes}, room=rid)
+
+    @socketio.on('toggle_ready')
+    def handle_toggle_ready(data):
+        rid = str(data.get('room_id'))
+        uid = request.sid
+        ready = data.get('ready')
+        state = room_states.setdefault(rid, {'timer': None, 'ready': {}, 'countdown': False})
+        state['ready'][uid] = ready
+
+        # Sacamos el username del participante
+        p = Participant.query.filter_by(room_id=rid, user_id=uid).first()
+        uname = p.username if p else 'Anon'
+
+        # Avisamos cambio de ready de uno
+        emit('ready_updated', {'username': uname, 'ready': ready}, room=rid)
+
+        # Si ya empezó el countdown y uno se desmarca, lo cancelamos
+        if state['countdown'] and not ready:
+            state['countdown'] = False
+            emit('cancel_countdown', {}, room=rid)
+
+        # Chequeo: si hay 2 jugadores y ambos listos, empezamos countdown
+        parts = Participant.query.filter_by(room_id=rid).all()
+        if len(parts) == 2 and all(state['ready'].get(p.user_id) for p in parts):
+            state['countdown'] = True
+            emit('start_countdown', {'seconds': 5}, room=rid)
 
     @socketio.on('join_room')
     def handle_join_room(data):
