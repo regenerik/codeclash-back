@@ -64,15 +64,13 @@ def create_user():
     try:
         email = request.json.get('email')
         password = request.json.get('password')
-        name = request.json.get('name')
-        dni = request.json.get('dni')
+        name = request.json.get('nickname')
+        dni = "base dni"
         admin = False
-        url_image = "base"
-        # Después de crear el primer administrador y la consola de agregar y quitar admins borrar este pedazo:
+        url_image = "base url"
 
-        #-----------------------------------------------------------------------------------------------------
-        if not email or not password or not name or not dni:
-            return jsonify({'error': 'Email, password, dni and Name are required.'}), 400
+        if not email or not password or not name:
+            return jsonify({'error': 'email, password, dni and name are required.'}), 400
 
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
@@ -82,7 +80,7 @@ def create_user():
 
 
         # Ensamblamos el usuario nuevo
-        new_user = User(email=email, password=password_hash, name=name , dni=dni, admin=admin, url_image= url_image)
+        new_user = User(email=email, password=password_hash, name=name , dni=dni, admin=admin, url_image=url_image)
 
         db.session.add(new_user)
         db.session.commit()
