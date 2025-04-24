@@ -26,21 +26,21 @@ jwt = JWTManager()
 
 # Sistema de key base pre rutas ------------------------:
 
-API_KEY = os.getenv('API_KEY')
+# API_KEY = os.getenv('API_KEY')
 
-def check_api_key(api_key):
-    return api_key == API_KEY
+# def check_api_key(api_key):
+#     return api_key == API_KEY
 
-@admin_bp.before_request
-def authorize():
-    if request.method == 'OPTIONS':
-        return
-    # En la lista de este if agregamos las rutas que no querramos restringir si no tienen el API_KEY embutido en Authorization en HEADERS.
-    if request.path in ['/test_admin_bp','/','/correccion_campos_vacios','/descargar_positividad_corregida','/download_comments_evaluation','/all_comments_evaluation','/download_resume_csv','/create_resumes_of_all','/descargar_excel','/create_resumes', '/reportes_disponibles', '/create_user', '/login', '/users','/update_profile','/update_profile_image','/update_admin']:
-        return
-    api_key = request.headers.get('Authorization')
-    if not api_key or not check_api_key(api_key):
-        return jsonify({'message': 'Unauthorized'}), 401
+# @admin_bp.before_request
+# def authorize():
+#     if request.method == 'OPTIONS':
+#         return
+#     # En la lista de este if agregamos las rutas que no querramos restringir si no tienen el API_KEY embutido en Authorization en HEADERS.
+#     if request.path in ['/test_admin_bp','/','/correccion_campos_vacios','/descargar_positividad_corregida','/download_comments_evaluation','/all_comments_evaluation','/download_resume_csv','/create_resumes_of_all','/descargar_excel','/create_resumes', '/reportes_disponibles', '/create_user', '/login', '/users','/update_profile','/update_profile_image','/update_admin']:
+#         return
+#     api_key = request.headers.get('Authorization')
+#     if not api_key or not check_api_key(api_key):
+#         return jsonify({'message': 'Unauthorized'}), 401
     
 #--------------------------------RUTAS SINGLE---------------------------------
 
@@ -65,12 +65,11 @@ def create_user():
         email = request.json.get('email')
         password = request.json.get('password')
         name = request.json.get('nickname')
-        dni = "base dni"
         admin = False
         url_image = "base url"
 
         if not email or not password or not name:
-            return jsonify({'error': 'email, password, dni and name are required.'}), 400
+            return jsonify({'error': 'email, password, and name are required.'}), 400
 
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
@@ -80,7 +79,7 @@ def create_user():
 
 
         # Ensamblamos el usuario nuevo
-        new_user = User(email=email, password=password_hash, name=name , dni=dni, admin=admin, url_image=url_image)
+        new_user = User(email=email, password=password_hash, name=name , admin=admin, url_image=url_image)
 
         db.session.add(new_user)
         db.session.commit()
@@ -88,7 +87,6 @@ def create_user():
         good_to_share_to_user = {
             'name':new_user.name,
             'email':new_user.email,
-            'dni':new_user.dni,
             'admin':new_user.admin,
             'url_image':new_user.url_image
         }
@@ -121,9 +119,9 @@ def get_token():
         if true_o_false:
             expires = timedelta(minutes=30)  # pueden ser "hours", "minutes", "days","seconds"
 
-            user_dni = login_user.dni       # recuperamos el id del usuario para crear el token...
-            access_token = create_access_token(identity=user_dni, expires_delta=expires)   # creamos el token con tiempo vencimiento
-            return jsonify({ 'access_token':access_token, 'name':login_user.name, 'admin':login_user.admin, 'dni':user_dni, 'email':login_user.email, 'url_image':login_user.url_image}), 200  # Enviamos el token al front ( si es necesario serializamos el "login_user" y tambien lo enviamos en el objeto json )
+            user_id = login_user.id       # recuperamos el id del usuario para crear el token...
+            access_token = create_access_token(identity=user_id, expires_delta=expires)   # creamos el token con tiempo vencimiento
+            return jsonify({ 'access_token':access_token, 'name':login_user.name, 'admin':login_user.admin, 'email':login_user.email, 'url_image':login_user.url_image}), 200  # Enviamos el token al front ( si es necesario serializamos el "login_user" y tambien lo enviamos en el objeto json )
 
         else:
             return {"Error":"Contraseña  incorrecta"}
@@ -142,7 +140,6 @@ def show_users():
         user_list = []
         for user in users:
             user_dict = {
-                'dni': user.dni,
                 'email': user.email,
                 'name': user.name,
                 'admin': user.admin,
@@ -159,12 +156,11 @@ def update():
     email = request.json.get('email')
     password = request.json.get('password')
     name = request.json.get('name')
-    dni = request.json.get('dni')
     url_image = "base"
 
 
     # Verificar que todos los campos requeridos estén presentes
-    if not email or not password or not name or not dni or not url_image:
+    if not email or not password or not name or not url_image:
         return jsonify({"error": "Todos los campos son obligatorios"}), 400
 
     # Buscar al usuario por email
@@ -175,7 +171,6 @@ def update():
 
     # Actualizar los datos del usuario
     user.name = name
-    user.dni = dni
     user.password = bcrypt.generate_password_hash(password)  # Asegúrate de hash la contraseña antes de guardarla
     user.url_image = url_image
 
@@ -240,14 +235,14 @@ def update_admin():
         return jsonify({"error": f"Error al actualizar el estado admin: {str(e)}"}), 500
     
     # OBTENER USUARIO POR SU DNI
-@admin_bp.route('/get_user/<int:dni>', methods=['GET'])
-def get_user(dni):
+@admin_bp.route('/get_user/<int:id>', methods=['GET'])
+def get_user(id):
     try:
         
-        login_user = User.query.filter_by(dni=dni).one()
+        login_user = User.query.filter_by(id=id).one()
 
         if login_user:
-            return jsonify({'name':login_user.name, 'admin':login_user.admin, 'dni':login_user.dni, 'email':login_user.email, 'url_image':login_user.url_image}), 200 
+            return jsonify({'name':login_user.name, 'admin':login_user.admin, 'email':login_user.email, 'url_image':login_user.url_image}), 200 
 
         else:
             return {"Error":"No se encontró un usuario con ese documento"}
@@ -255,3 +250,67 @@ def get_user(dni):
     except Exception as e:
         return {"Error":"El dni proporcionado no corresponde a ninguno registrado: " + str(e)}, 500
     
+@admin_bp.route('/user_update', methods=['PATCH'])
+@jwt_required()
+def update_user():
+    # 1) Tomás el ID del token
+    user_id = get_jwt_identity()
+    # 2) Buscás el usuario en la DB
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'msg': 'Usuario no encontrado'}), 404
+
+    # 3) Leé la prop (o props) que vienen en el JSON
+    data = request.get_json() or {}
+    # Ejemplo: { "email": "nuevo@mail.com" }
+    # 4) Reemplazás el valor en el modelo
+    for field, new_value in data.items():
+        if hasattr(user, field):
+            setattr(user, field, new_value)
+
+    # 5) Commit de la sesión
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'msg': 'Error al guardar cambios', 'error': str(e)}), 500
+
+    # 6) Devuelves el usuario actualizado (para que tu action lo reciba)
+    return jsonify({
+        'user': {
+            'id': user.id,
+            'username': user.name,
+            'email': user.email,
+            'name': user.name,
+            'level': user.level,
+            'url_image': user.url_image
+        }
+    }), 200
+
+
+@admin_bp.route('/update-password', methods=['PATCH'])
+@jwt_required()
+def update_password():
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'msg': 'Usuario no encontrado'}), 404
+
+    data = request.get_json() or {}
+    old_pass = data.get('old_password')
+    new_pass = data.get('new_password')
+
+    # Verificar contraseña actual
+    if not bcrypt.check_password_hash(user.password, old_pass):
+        return jsonify({'msg': 'La contraseña actual no coincide'}), 401
+
+    # Actualizar y guardar
+    user.password = bcrypt.generate_password_hash(new_pass)
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'msg': 'Error al guardar nueva contraseña', 'error': str(e)}), 500
+
+    # Opcional: devolvés user sin el hash si lo necesitás
+    return jsonify({'msg': 'Contraseña actualizada correctamente'}), 200
