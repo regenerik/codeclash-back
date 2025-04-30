@@ -7,6 +7,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from database import db
 from extensions import init_extensions
+from routes.ejercicios_bp import ejercicios_bp
 from routes.admin_bp import admin_bp
 from routes.public_bp import public_bp
 from routes.clasifica_comentarios_individuales_bp import clasifica_comentarios_individuales_bp
@@ -40,6 +41,7 @@ bcrypt = Bcrypt(app)
 app.register_blueprint(admin_bp)
 app.register_blueprint(public_bp, url_prefix='/public')
 app.register_blueprint(clasifica_comentarios_individuales_bp, url_prefix='/')
+app.register_blueprint(ejercicios_bp, url_prefix='/')
 
 # Configuración DB
 db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance', 'mydatabase.db')
