@@ -6,17 +6,25 @@ from models import Room, Participant
 from threading import Timer
 
 room_states = {}
+active_clients = 0
 
 def init_socketio(socketio):
     @socketio.on('connect')
     def handle_connect():
-        print(f">>> Cliente conectado: {request.sid}")
+        global active_clients
+        active_clients += 1
+        print(f">>> Cliente conectado: {request.sid} (total: {active_clients})")
         emit('server_message', {'msg': 'Bienvenido al CodeClash!'})
+        # Aviso a todos los clientes cuántos están conectados
+        socketio.emit('lobby_count', {'count': active_clients})
         _broadcast_to(request.sid, socketio)
 
     @socketio.on('disconnect')
     def handle_disconnect():
+        global active_clients
         user_id = request.sid
+        active_clients = max(active_clients - 1, 0)
+        socketio.emit('lobby_count', {'count': active_clients})
         parts = Participant.query.filter_by(user_id=user_id).all()
         room_ids = [p.room_id for p in parts]
 
@@ -238,11 +246,16 @@ def init_socketio(socketio):
         # Si ambos participantes ya entregaron, avisamos
         participants = Participant.query.filter_by(room_id=rid).all()
         if len(participants) == 2 and all(p.username in sols for p in participants):
-            # Mandamos todas las soluciones a la sala
-            # emit('both_finished', {'solutions': sols}, room=rid)
+            # ② avisamos que ambos terminaron (para que el cliente corte el timer)
+            socketio.emit(
+                'both_finished',
+                {'solutions': sols},
+                room=rid
+            )
+            # ③ decidimos ganador y enviamos resultado
             from utils.decide_winner import decide_winner
             winner, justification = decide_winner(sols)
-            emit(
+            socketio.emit(
                 'game_result',
                 {
                     'solutions': sols,

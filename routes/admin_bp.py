@@ -314,3 +314,11 @@ def update_password():
 
     # Opcional: devolvés user sin el hash si lo necesitás
     return jsonify({'msg': 'Contraseña actualizada correctamente'}), 200
+
+
+@admin_bp.route('/validate-token', methods=['GET'])
+@jwt_required()  
+def validate_token():
+
+    current_user = get_jwt_identity()
+    return jsonify(valid=True, user=current_user), 200
